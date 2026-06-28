@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ember & Ash — Wood Fire Kitchen</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --charcoal: #1A1714;
+    --ember: #C9622F;
+    --ember-light: #E07840;
+    --cream: #F0E6D3;
+    --smoke: #4A4440;
+    --gold: #D4A847;
+    --white: #FAF7F2;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--charcoal);
+    color: var(--cream);
+    font-family: 'DM Sans', sans-serif;
+    overflow-x: hidden;
+  }
+
+  /* ─── LOADER ─── */
+  #loader {
+    position: fixed; inset: 0; z-index: 9999;
+    background: var(--charcoal);
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 20px;
+    transition: opacity 0.8s ease, visibility 0.8s ease;
+  }
+  #loader.hidden { opacity: 0; visibility: hidden; }
+  .loader-text {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 6vw, 4rem);
+    color: var(--cream);
+    letter-spacing: 0.15em;
+    overflow: hidden;
+  }
+  .loader-text span {
+    display: inline-block;
+    transform: translateY(100%);
+    animation: slideUp 0.6s cubic-bezier(0.16,1,0.3,1) forwards;
+  }
+  .loader-text span:nth-child(2) { animation-delay: 0.05s; }
+  .loader-text span:nth-child(3) { animation-delay: 0.1s; }
+  .loader-text span:nth-child(4) { animation-delay: 0.15s; }
+  .loader-text span:nth-child(5) { animation-delay: 0.2s; }
+  .loader-text span:nth-child(6) { animation-delay: 0.25s; }
+  .loader-text span:nth-child(7) { animation-delay: 0.3s; }
+  .loader-text span:nth-child(8) { animation-delay: 0.35s; }
+  .loader-text span:nth-child(9) { animation-delay: 0.4s; }
+  .loader-line {
+    width: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--ember), transparent);
+    animation: expandLine 1.2s 0.5s ease forwards;
+  }
+  @keyframes slideUp {
+    to { transform: translateY(0); }
+  }
+  @keyframes expandLine {
+    to { width: 200px; }
+  }
+
+  /* ─── NAV ─── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    padding: 24px 60px;
+    display: flex; align-items: center; justify-content: space-between;
+    transition: all 0.5s ease;
+  }
+  nav.scrolled {
+    background: rgba(26,23,20,0.92);
+    backdrop-filter: blur(20px);
+    padding: 16px 60px;
+    border-bottom: 1px solid rgba(201,98,47,0.15);
+  }
+  .nav-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    color: var(--cream);
+    text-decoration: none;
+    letter-spacing: 0.08em;
+  }
+  .nav-logo em { color: var(--ember); font-style: italic; }
+  .nav-links { display: flex; gap: 40px; list-style: none; }
+  .nav-links a {
+    color: var(--cream);
+    text-decoration: none;
+    font-size: 0.85rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    opacity: 0.75;
+    transition: opacity 0.3s, color 0.3s;
+    position: relative;
+  }
+  .nav-links a::after {
+    content: '';
+    position: absolute; bottom: -4px; left: 0;
+    width: 0; height: 1px;
+    background: var(--ember);
+    transition: width 0.3s ease;
+  }
+  .nav-links a:hover { opacity: 1; color: var(--ember); }
+  .nav-links a:hover::after { width: 100%; }
+  .nav-cta {
+    border: 1px solid var(--ember);
+    color: var(--ember) !important;
+    padding: 10px 24px;
+    opacity: 1 !important;
+    transition: background 0.3s, color 0.3s !important;
+  }
+  .nav-cta:hover { background: var(--ember) !important; color: var(--charcoal) !important; }
+  .nav-cta::after { display: none !important; }
+
+  /* ─── HERO ─── */
+  #hero {
+    position: relative;
+    height: 100vh; min-height: 700px;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .hero-bg {
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 50% 80%, rgba(201,98,47,0.25) 0%, rgba(26,23,20,0) 60%),
+                radial-gradient(ellipse at 30% 50%, rgba(212,168,71,0.08) 0%, transparent 50%),
+                var(--charcoal);
+  }
+  .hero-grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(201,98,47,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(201,98,47,0.04) 1px, transparent 1px);
+    background-size: 80px 80px;
+    opacity: 0;
+    animation: fadeIn 2s 1s ease forwards;
+  }
+  #particles-canvas {
+    position: absolute; inset: 0;
+    pointer-events: none;
+  }
+  .hero-content {
+    position: relative; z-index: 2;
+    text-align: center;
+    max-width: 900px;
+    padding: 0 40px;
+  }
+  .hero-eyebrow {
+    font-size: 0.8rem;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--ember);
+    margin-bottom: 28px;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: revealUp 0.8s 1.4s cubic-bezier(0.16,1,0.3,1) forwards;
+  }
+  .hero-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(3.5rem, 9vw, 8rem);
+    line-height: 0.95;
+    letter-spacing: -0.02em;
+    color: var(--cream);
+    margin-bottom: 32px;
+    opacity: 0;
+    transform: translateY(30px);
+    animation: revealUp 1s 1.6s cubic-bezier(0.16,1,0.3,1) forwards;
+  }
+  .hero-title .accent { color: var(--ember); font-style: italic; }
+  .hero-sub {
+    font-size: clamp(1rem, 2vw, 1.15rem);
+    color: rgba(240,230,211,0.6);
+    font-weight: 300;
+    line-height: 1.7;
+    max-width: 520px;
+    margin: 0 auto 48px;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: revealUp 0.8s 1.9s cubic-bezier(0.16,1,0.3,1) forwards;
+  }
+  .hero-actions {
+    display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: revealUp 0.8s 2.1s cubic-bezier(0.16,1,0.3,1) forwards;
+  }
+  .btn-primary {
+    background: var(--ember);
+    color: var(--charcoal);
+    border: none;
+    padding: 16px 40px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s ease;
+  }
+  .btn-primary::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: var(--ember-light);
+    transform: translateX(-100%);
+    transition: transform 0.4s ease;
+  }
+  .btn-primary:hover { transform: translateY(-2px); }
+  .btn-primary:hover::before { transform: translateX(0); }
+  .btn-primary span { position: relative; z-index: 1; }
+  .btn-ghost {
+    border: 1px solid rgba(240,230,211,0.3);
+    color: var(--cream);
+    padding: 16px 40px;
+    font-size: 0.85rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: border-color 0.3s, background 0.3s;
+  }
+  .btn-ghost:hover { border-color: var(--cream); background: rgba(240,230,211,0.05); }
+  .hero-scroll {
+    position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    opacity: 0;
+    animation: fadeIn 1s 2.5s ease forwards;
+  }
+  .hero-scroll span {
+    font-size: 0.7rem; letter-spacing: 0.25em; text-transform: uppercase;
+    color: rgba(240,230,211,0.4);
+  }
+  .scroll-line {
+    width: 1px; height: 50px;
+    background: linear-gradient(to bottom, var(--ember), transparent);
+    animation: scrollPulse 2s ease infinite;
+  }
+  @keyframes scrollPulse {
+    0%, 100% { opacity: 1; transform: scaleY(1); transform-origin: top; }
+    50% { opacity: 0.4; }
+  }
+  @keyframes revealUp {
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeIn {
+    to { opacity: 1; }
+  }
+
+  /* ─── MARQUEE ─── */
+  .marquee-wrap {
+    overflow: hidden;
+    border-top: 1px solid rgba(201,98,47,0.2);
+    border-bottom: 1px solid rgba(201,98,47,0.2);
+    padding: 18px 0;
+    background: rgba(201,98,47,0.05);
+  }
+  .marquee-track {
+    display: flex; gap: 60px; width: max-content;
+    animation: marquee 30s linear infinite;
+  }
+  .marquee-item {
+    display: flex; align-items: center; gap: 20px;
+    font-size: 0.75rem; letter-spacing: 0.3em; text-transform: uppercase;
+    color: rgba(240,230,211,0.5); white-space: nowrap;
+  }
+  .marquee-dot { width: 4px; height: 4px; background: var(--ember); border-radius: 50%; flex-shrink: 0; }
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  /* ─── SECTIONS ─── */
+  section { padding: 120px 60px; }
+  .section-label {
+    font-size: 0.7rem; letter-spacing: 0.4em; text-transform: uppercase;
+    color: var(--ember); margin-bottom: 20px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .section-label::before {
+    content: ''; display: block; width: 32px; height: 1px; background: var(--ember);
+  }
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    line-height: 1.1;
+    color: var(--cream);
+    margin-bottom: 24px;
+  }
+  .section-title em { color: var(--ember); font-style: italic; }
+  .section-body {
+    font-size: 1rem; line-height: 1.8;
+    color: rgba(240,230,211,0.6);
+    font-weight: 300;
+    max-width: 500px;
+  }
+
+  /* ─── ABOUT ─── */
+  #about { max-width: 1300px; margin: 0 auto; }
+  .about-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center;
+  }
+  .about-visual {
+    position: relative; aspect-ratio: 3/4; overflow: hidden;
+  }
+  .about-img-frame {
+    width: 100%; height: 100%;
+    background: linear-gradient(135deg, #2A2320 0%, #1A1714 100%);
+    position: relative;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .about-img-frame::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 50% 80%, rgba(201,98,47,0.3), transparent 60%);
+    animation: pulse 4s ease infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 0.6; } 50% { opacity: 1; }
+  }
+  .flame-icon {
+    font-size: 8rem; opacity: 0.15;
+    animation: flicker 3s ease infinite alternate;
+    filter: blur(1px);
+  }
+  @keyframes flicker {
+    0% { transform: scale(1) rotate(-2deg); opacity: 0.12; }
+    25% { transform: scale(1.05) rotate(1deg); opacity: 0.18; }
+    50% { transform: scale(0.98) rotate(-1deg); opacity: 0.14; }
+    75% { transform: scale(1.03) rotate(2deg); opacity: 0.2; }
+    100% { transform: scale(1) rotate(0deg); opacity: 0.15; }
+  }
+  .about-corner {
+    position: absolute; bottom: -20px; right: -20px;
+    width: 180px; height: 180px;
+    border: 1px solid rgba(201,98,47,0.3);
+    pointer-events: none;
+  }
+  .about-stats {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 56px;
+  }
+  .stat-item { border-left: 2px solid var(--ember); padding-left: 20px; }
+  .stat-number {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.8rem;
+    color: var(--cream);
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .stat-number sup { font-size: 1.2rem; color: var(--ember); }
+  .stat-label { font-size: 0.78rem; letter-spacing: 0.15em; text-transform: uppercase; color: rgba(240,230,211,0.45); }
+
+  /* ─── MENU ─── */
+  #menu { background: rgba(255,255,255,0.015); }
+  .menu-inner { max-width: 1300px; margin: 0 auto; }
+  .menu-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 64px; flex-wrap: wrap; gap: 24px; }
+  .menu-tabs { display: flex; gap: 8px; }
+  .tab-btn {
+    background: none; border: 1px solid rgba(240,230,211,0.12);
+    color: rgba(240,230,211,0.4);
+    padding: 10px 24px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.8rem; letter-spacing: 0.15em; text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  .tab-btn.active, .tab-btn:hover {
+    background: var(--ember); border-color: var(--ember); color: var(--charcoal);
+  }
+  .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 2px; }
+  .menu-card {
+    background: rgba(240,230,211,0.03);
+    border: 1px solid rgba(240,230,211,0.07);
+    padding: 40px;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.4s cubic-bezier(0.16,1,0.3,1), background 0.4s ease;
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  .menu-card.revealed { opacity: 1; transform: translateY(0); transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.16,1,0.3,1), background 0.4s ease; }
+  .menu-card::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(circle at var(--mx,50%) var(--my,50%), rgba(201,98,47,0.12), transparent 60%);
+    opacity: 0;
+    transition: opacity 0.4s;
+  }
+  .menu-card:hover::before { opacity: 1; }
+  .menu-card:hover { transform: translateY(-4px); background: rgba(240,230,211,0.05); }
+  .card-number {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.75rem; color: var(--ember);
+    letter-spacing: 0.2em; margin-bottom: 20px;
+    display: block;
+  }
+  .card-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem; color: var(--cream);
+    margin-bottom: 12px; line-height: 1.3;
+  }
+  .card-desc {
+    font-size: 0.88rem; color: rgba(240,230,211,0.5);
+    line-height: 1.7; font-weight: 300; margin-bottom: 28px;
+  }
+  .card-footer { display: flex; justify-content: space-between; align-items: center; }
+  .card-price {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem; color: var(--gold);
+  }
+  .card-tag {
+    font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase;
+    border: 1px solid rgba(201,98,47,0.3); color: var(--ember);
+    padding: 4px 12px;
+  }
+
+  /* ─── EXPERIENCE ─── */
+  #experience { max-width: 1300px; margin: 0 auto; }
+  .exp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin-top: 80px; }
+  .exp-item {
+    padding: 56px 40px;
+    border: 1px solid rgba(240,230,211,0.07);
+    position: relative;
+    overflow: hidden;
+    transition: background 0.4s;
+  }
+  .exp-item:hover { background: rgba(201,98,47,0.05); }
+  .exp-item::after {
+    content: '';
+    position: absolute; bottom: 0; left: 0;
+    width: 0; height: 2px;
+    background: var(--ember);
+    transition: width 0.5s ease;
+  }
+  .exp-item:hover::after { width: 100%; }
+  .exp-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 4rem; color: rgba(201,98,47,0.12);
+    margin-bottom: 24px; line-height: 1;
+    transition: color 0.4s;
+  }
+  .exp-item:hover .exp-num { color: rgba(201,98,47,0.25); }
+  .exp-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem; color: var(--cream);
+    margin-bottom: 16px;
+  }
+  .exp-body {
+    font-size: 0.9rem; color: rgba(240,230,211,0.5);
+    line-height: 1.75; font-weight: 300;
+  }
+
+  /* ─── RESERVATION ─── */
+  #reservation {
+    background: linear-gradient(135deg, rgba(201,98,47,0.08), rgba(26,23,20,0) 60%),
+                rgba(255,255,255,0.015);
+    border-top: 1px solid rgba(201,98,47,0.15);
+    border-bottom: 1px solid rgba(201,98,47,0.15);
+    text-align: center;
+  }
+  .res-inner { max-width: 700px; margin: 0 auto; }
+  .res-inner .section-label { justify-content: center; }
+  .res-inner .section-label::before { display: none; }
+  .res-inner .section-body { margin: 0 auto 56px; }
+  .res-form {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+  }
+  .form-field {
+    position: relative;
+  }
+  .form-field.full { grid-column: 1 / -1; }
+  .form-field input, .form-field select {
+    width: 100%; padding: 18px 20px;
+    background: rgba(240,230,211,0.04);
+    border: 1px solid rgba(240,230,211,0.12);
+    color: var(--cream);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.3s, background 0.3s;
+    appearance: none;
+  }
+  .form-field input::placeholder { color: rgba(240,230,211,0.3); }
+  .form-field input:focus, .form-field select:focus {
+    border-color: var(--ember);
+    background: rgba(201,98,47,0.06);
+  }
+  .form-field select option { background: var(--charcoal); color: var(--cream); }
+  .res-submit {
+    grid-column: 1 / -1;
+    background: var(--ember); color: var(--charcoal);
+    border: none; padding: 20px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem; font-weight: 500;
+    letter-spacing: 0.2em; text-transform: uppercase;
+    cursor: pointer;
+    position: relative; overflow: hidden;
+    transition: transform 0.3s;
+  }
+  .res-submit:hover { transform: translateY(-2px); }
+  .res-submit::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: var(--ember-light);
+    transform: translateX(-100%);
+    transition: transform 0.4s ease;
+  }
+  .res-submit:hover::before { transform: translateX(0); }
+  .res-submit span { position: relative; z-index: 1; }
+
+  /* ─── FOOTER ─── */
+  footer {
+    padding: 80px 60px 40px;
+    border-top: 1px solid rgba(240,230,211,0.08);
+  }
+  .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 60px; margin-bottom: 60px; }
+  .footer-brand .nav-logo { display: block; margin-bottom: 20px; font-size: 1.8rem; }
+  .footer-brand p { font-size: 0.88rem; color: rgba(240,230,211,0.4); line-height: 1.7; font-weight: 300; max-width: 280px; }
+  .footer-col h4 { font-size: 0.7rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--ember); margin-bottom: 20px; }
+  .footer-col a, .footer-col p {
+    display: block; color: rgba(240,230,211,0.4);
+    font-size: 0.88rem; line-height: 2.2;
+    text-decoration: none;
+    transition: color 0.3s;
+  }
+  .footer-col a:hover { color: var(--cream); }
+  .footer-bottom { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; padding-top: 32px; border-top: 1px solid rgba(240,230,211,0.07); }
+  .footer-bottom p { font-size: 0.78rem; color: rgba(240,230,211,0.25); }
+  .footer-bottom a { color: rgba(240,230,211,0.25); text-decoration: none; }
+
+  /* ─── SCROLL REVEAL ─── */
+  .reveal {
+    opacity: 0; transform: translateY(40px);
+    transition: opacity 0.8s ease, transform 0.8s cubic-bezier(0.16,1,0.3,1);
+  }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+  .reveal-delay-1 { transition-delay: 0.1s; }
+  .reveal-delay-2 { transition-delay: 0.2s; }
+  .reveal-delay-3 { transition-delay: 0.3s; }
+
+  /* ─── CURSOR ─── */
+  .cursor {
+    position: fixed; pointer-events: none; z-index: 9998;
+    mix-blend-mode: difference;
+  }
+  .cursor-dot {
+    width: 8px; height: 8px;
+    background: var(--cream);
+    border-radius: 50%;
+    position: absolute;
+    transform: translate(-50%, -50%);
+    transition: transform 0.1s ease, width 0.3s ease, height 0.3s ease, opacity 0.3s;
+  }
+  .cursor-ring {
+    width: 36px; height: 36px;
+    border: 1px solid rgba(240,230,211,0.5);
+    border-radius: 50%;
+    position: absolute;
+    transform: translate(-50%, -50%);
+    transition: transform 0.15s ease, width 0.3s ease, height 0.3s ease, border-color 0.3s;
+  }
+  body:has(a:hover) .cursor-ring, body:has(button:hover) .cursor-ring {
+    width: 56px; height: 56px; border-color: var(--ember);
+  }
+
+  @media (max-width: 900px) {
+    nav { padding: 20px 28px; }
+    nav.scrolled { padding: 14px 28px; }
+    .nav-links { display: none; }
+    section { padding: 80px 28px; }
+    .about-grid, .exp-grid, .footer-grid { grid-template-columns: 1fr; gap: 40px; }
+    .about-corner { display: none; }
+    .res-form { grid-template-columns: 1fr; }
+    .form-field.full { grid-column: 1; }
+    footer { padding: 60px 28px 32px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOADER -->
+<div id="loader">
+  <div class="loader-text">
+    <span>E</span><span>m</span><span>b</span><span>e</span><span>r</span><span> </span><span>&</span><span> </span><span>Ash</span>
+  </div>
+  <div class="loader-line"></div>
+</div>
+
+<!-- CURSOR -->
+<div class="cursor">
+  <div class="cursor-dot" id="cursorDot"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+</div>
+
+<!-- NAV -->
+<nav id="navbar">
+  <a href="#" class="nav-logo">Ember <em>&</em> Ash</a>
+  <ul class="nav-links">
+    <li><a href="#about">Our Story</a></li>
+    <li><a href="#menu">Menu</a></li>
+    <li><a href="#experience">Experience</a></li>
+    <li><a href="#reservation" class="nav-cta">Reserve</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <canvas id="particles-canvas"></canvas>
+  <div class="hero-content">
+    <p class="hero-eyebrow">Wood Fire Kitchen · Est. 2019</p>
+    <h1 class="hero-title">Where <span class="accent">fire</span><br>meets flavor</h1>
+    <p class="hero-sub">Every dish born from ancient technique — open flame, hand-cut timber, and produce harvested at its peak.</p>
+    <div class="hero-actions">
+      <a href="#menu" class="btn-primary"><span>Explore Menu</span></a>
+      <a href="#reservation" class="btn-ghost">Reserve a Table</a>
+    </div>
+  </div>
+  <div class="hero-scroll">
+    <span>Scroll</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<!-- MARQUEE -->
+<div class="marquee-wrap">
+  <div class="marquee-track">
+    <div class="marquee-item"><span class="marquee-dot"></span> Wood-Fired Cuisine</div>
+    <div class="marquee-item"><span class="marquee-dot"></span> Seasonal Ingredients</div>
+    <div class="marquee-item"><span class="marquee-dot"></span> Award-Winning Chef</div>
+    <div class="marquee-item"><span class="marquee-dot"></span> Open Flame Grilling</div>
+    <div class="marquee-item"><span class="marquee-dot"></span> Private Dining</div>
+    <div class="marquee-item"><span class="marquee-dot"></span> Artisan Wine List</div>
+    <div class="marquee-item"><span class="marquee-dot"></span> Live Fire Experience</div>
+    <div class="marquee-item"><span class="marquee-dot"></span> Wood-Fired Cuisine</div>
+    <div class="marquee-item"><span class="marquee-dot"></span> Seasonal Ingredients</div>
+    <div class="marquee-item"><span class="marquee-dot"></span> Award-Winning Chef</div>
+    <div class="marquee-item"><span class="marquee-dot"></span> Open Flame Grilling</div>
+    <div class="marquee-item"><span class="marquee-dot"></span> Private Dining</div>
+    <div class="marquee-item"><span class="marquee-dot"></span> Artisan Wine List</div>
+    <div class="marquee-item"><span class="marquee-dot"></span> Live Fire Experience</div>
+  </div>
+</div>
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="about-grid">
+    <div class="about-visual reveal">
+      <div class="about-img-frame">
+        <div class="flame-icon">🔥</div>
+      </div>
+      <div class="about-corner"></div>
+    </div>
+    <div class="about-text">
+      <p class="section-label reveal">Our Story</p>
+      <h2 class="section-title reveal reveal-delay-1">Crafted in<br><em>open flame</em></h2>
+      <p class="section-body reveal reveal-delay-2">We believe fire is the oldest, most honest form of cooking. Chef Marco Vidal built Ember & Ash around a single wood-burning hearth — no gas, no shortcuts. Just timber sourced from local orchards, ingredients from farms we know by name, and technique honed over two decades across three continents.</p>
+      <div class="about-stats">
+        <div class="stat-item reveal reveal-delay-1">
+          <div class="stat-number" data-target="2400">0</div>
+          <div class="stat-label">Covers per month</div>
+        </div>
+        <div class="stat-item reveal reveal-delay-2">
+          <div class="stat-number" data-target="6"><sup>#</sup>0</div>
+          <div class="stat-label">Regional ranking</div>
+        </div>
+        <div class="stat-item reveal reveal-delay-1">
+          <div class="stat-number" data-target="48">0</div>
+          <div class="stat-label">Menu items, seasonal</div>
+        </div>
+        <div class="stat-item reveal reveal-delay-2">
+          <div class="stat-number" data-target="12">0</div>
+          <div class="stat-label">Partner farms</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MENU -->
+<section id="menu">
+  <div class="menu-inner">
+    <div class="menu-header">
+      <div>
+        <p class="section-label reveal">The Menu</p>
+        <h2 class="section-title reveal reveal-delay-1">A feast born<br>from <em>fire</em></h2>
+      </div>
+      <div class="menu-tabs reveal">
+        <button class="tab-btn active" data-tab="signatures">Signatures</button>
+        <button class="tab-btn" data-tab="starters">Starters</button>
+        <button class="tab-btn" data-tab="desserts">Desserts</button>
+      </div>
+    </div>
+    <div class="menu-grid" id="menuGrid"></div>
+  </div>
+</section>
+
+<!-- EXPERIENCE -->
+<section id="experience">
+  <div style="max-width:1300px;margin:0 auto;">
+    <p class="section-label reveal">The Experience</p>
+    <h2 class="section-title reveal reveal-delay-1">More than a<br><em>meal</em></h2>
+    <div class="exp-grid">
+      <div class="exp-item reveal">
+        <div class="exp-num">I</div>
+        <h3 class="exp-title">The Hearth Bar</h3>
+        <p class="exp-body">Sit steps from our open wood-burning hearth. Watch the flames, smell the smoke, sip a glass of aged Malbec while your course is still on the fire.</p>
+      </div>
+      <div class="exp-item reveal reveal-delay-1">
+        <div class="exp-num">II</div>
+        <h3 class="exp-title">Chef's Table</h3>
+        <p class="exp-body">A private six-seat table inside the kitchen. A ten-course journey through the evening's harvest, plated and narrated by Chef Vidal himself.</p>
+      </div>
+      <div class="exp-item reveal reveal-delay-2">
+        <div class="exp-num">III</div>
+        <h3 class="exp-title">Private Events</h3>
+        <p class="exp-body">The full dining room is yours — birthdays, proposals, corporate evenings. We curate every detail from the first ember to the final glass.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- RESERVATION -->
+<section id="reservation">
+  <div class="res-inner">
+    <p class="section-label reveal">Reserve a Table</p>
+    <h2 class="section-title reveal reveal-delay-1">Join us at<br>the <em>fire</em></h2>
+    <p class="section-body reveal reveal-delay-2">Reservations are held for 15 minutes. For parties of 8 or more, call us directly.</p>
+    <div class="res-form reveal reveal-delay-3">
+      <div class="form-field">
+        <input type="text" placeholder="First & Last Name">
+      </div>
+      <div class="form-field">
+        <input type="email" placeholder="Email Address">
+      </div>
+      <div class="form-field">
+        <input type="date">
+      </div>
+      <div class="form-field">
+        <select>
+          <option value="" disabled selected>Number of Guests</option>
+          <option>1 guest</option>
+          <option>2 guests</option>
+          <option>3 guests</option>
+          <option>4 guests</option>
+          <option>5 guests</option>
+          <option>6 guests</option>
+          <option>7 guests</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <select>
+          <option value="" disabled selected>Preferred Time</option>
+          <option>18:00</option>
+          <option>18:30</option>
+          <option>19:00</option>
+          <option>19:30</option>
+          <option>20:00</option>
+          <option>20:30</option>
+          <option>21:00</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <select>
+          <option value="" disabled selected>Occasion</option>
+          <option>Birthday</option>
+          <option>Anniversary</option>
+          <option>Business Dinner</option>
+          <option>Date Night</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="form-field full">
+        <input type="text" placeholder="Special requests or dietary notes (optional)">
+      </div>
+      <button class="res-submit"><span>Confirm Reservation</span></button>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-grid">
+    <div class="footer-brand">
+      <a href="#" class="nav-logo">Ember <em>&</em> Ash</a>
+      <p>A wood fire kitchen where ancient technique and modern flavour find common ground. Open evenings, Tuesday through Sunday.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Navigate</h4>
+      <a href="#about">Our Story</a>
+      <a href="#menu">Menu</a>
+      <a href="#experience">Experience</a>
+      <a href="#reservation">Reserve</a>
+    </div>
+    <div class="footer-col">
+      <h4>Contact</h4>
+      <p>+1 (415) 882 4430</p>
+      <p>hello@emberandash.com</p>
+      <p>14 Cinder Lane, SF</p>
+    </div>
+    <div class="footer-col">
+      <h4>Hours</h4>
+      <p>Tue – Thu · 18:00 – 22:00</p>
+      <p>Fri – Sat · 17:30 – 23:00</p>
+      <p>Sunday · 17:00 – 21:30</p>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>© 2026 Ember & Ash. All rights reserved.</p>
+    <p><a href="#">Privacy</a> · <a href="#">Terms</a></p>
+  </div>
+</footer>
+
+<script>
+// ─── LOADER ───
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    document.getElementById('loader').classList.add('hidden');
+  }, 2000);
+});
+
+// ─── CUSTOM CURSOR ───
+const dot = document.getElementById('cursorDot');
+const ring = document.getElementById('cursorRing');
+let mx = 0, my = 0, rx = 0, ry = 0;
+document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+function animateCursor() {
+  dot.style.left = mx + 'px'; dot.style.top = my + 'px';
+  rx += (mx - rx) * 0.12; ry += (my - ry) * 0.12;
+  ring.style.left = rx + 'px'; ring.style.top = ry + 'px';
+  requestAnimationFrame(animateCursor);
+}
+animateCursor();
+
+// ─── NAVBAR ───
+window.addEventListener('scroll', () => {
+  document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 60);
+});
+
+// ─── PARTICLES ───
+const canvas = document.getElementById('particles-canvas');
+const ctx = canvas.getContext('2d');
+let W, H, particles = [];
+
+function resizeCanvas() {
+  W = canvas.width = canvas.offsetWidth;
+  H = canvas.height = canvas.offsetHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+class Particle {
+  constructor() { this.reset(); }
+  reset() {
+    this.x = Math.random() * W;
+    this.y = H + 20;
+    this.vx = (Math.random() - 0.5) * 0.8;
+    this.vy = -(Math.random() * 1.2 + 0.4);
+    this.life = 0;
+    this.maxLife = Math.random() * 200 + 120;
+    this.size = Math.random() * 3 + 1;
+    this.hue = Math.random() > 0.5 ? 25 : 45;
+  }
+  update() {
+    this.x += this.vx + Math.sin(this.life * 0.05) * 0.3;
+    this.y += this.vy;
+    this.life++;
+    if (this.life > this.maxLife || this.y < -20) this.reset();
+  }
+  draw() {
+    const alpha = Math.sin((this.life / this.maxLife) * Math.PI) * 0.5;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fillStyle = `hsla(${this.hue}, 90%, 60%, ${alpha})`;
+    ctx.fill();
+  }
+}
+
+for (let i = 0; i < 80; i++) {
+  const p = new Particle();
+  p.life = Math.random() * p.maxLife;
+  p.y = Math.random() * H;
+  particles.push(p);
+}
+
+function animateParticles() {
+  ctx.clearRect(0, 0, W, H);
+  particles.forEach(p => { p.update(); p.draw(); });
+  requestAnimationFrame(animateParticles);
+}
+animateParticles();
+
+// ─── MENU DATA ───
+const menuData = {
+  signatures: [
+    { n: '01', title: 'Bone-In Ribeye', desc: 'Dry-aged 45 days, charred over white oak, rested with herb butter and smoked bone marrow jus.', price: '$68', tag: 'Chef\'s Pick' },
+    { n: '02', title: 'Whole Roast Chicken', desc: 'Brined 24 hours, rotisserie over live flame, finished with preserved lemon and fire-roasted garlic aioli.', price: '$44', tag: 'For Two' },
+    { n: '03', title: 'Wood-Fired Lamb Rack', desc: 'Frenched rack, charmoula crust, ember-roasted carrots, harissa labneh, pomegranate.', price: '$58', tag: 'Signature' },
+    { n: '04', title: 'Grilled King Salmon', desc: 'Cedar plank, miso glaze, fire-blistered bok choy, yuzu beurre blanc, sesame oil.', price: '$42', tag: 'Sustainable' },
+    { n: '05', title: 'Smoked Tomahawk', desc: 'A full 48oz tomahawk slow-smoked then seared at 900°F. Served with chimichurri and wood-ash salt.', price: '$120', tag: 'For Two' },
+    { n: '06', title: 'Cauliflower Heart', desc: 'Whole head, fire-roasted until tender, saffron beurre blanc, toasted pine nuts, raisin purée.', price: '$32', tag: 'Vegetarian' },
+  ],
+  starters: [
+    { n: '01', title: 'Fire-Kissed Burrata', desc: 'Lightly grilled burrata, heirloom tomato, basil oil, fleur de sel, warm focaccia.', price: '$18', tag: 'Fan Favourite' },
+    { n: '02', title: 'Ember Beets', desc: 'Whole beets buried in hot coals, sliced over whipped goat cheese, walnut, orange zest.', price: '$14', tag: 'Vegetarian' },
+    { n: '03', title: 'Grilled Octopus', desc: 'Slow-braised then charred, smoked paprika oil, pickled fennel, black olive tapenade.', price: '$22', tag: 'Seasonal' },
+    { n: '04', title: 'Ash-Crusted Bread', desc: 'House sourdough baked in the hearth, charcoal butter, whipped lardo, finishing salt.', price: '$10', tag: 'Essential' },
+    { n: '05', title: 'Smoked Salmon Tartare', desc: 'House-smoked salmon, crème fraîche, capers, shallot, blini, trout roe.', price: '$24', tag: 'Cold Smoked' },
+    { n: '06', title: 'Charred Corn Soup', desc: 'Flame-roasted corn bisque, jalapeño crema, crispy pancetta, chive oil.', price: '$16', tag: 'Daily Special' },
+  ],
+  desserts: [
+    { n: '01', title: 'Burnt Basque Cheesecake', desc: 'Signature high-flame cheesecake, caramel interior, vanilla cream, sea salt flake.', price: '$14', tag: 'Signature' },
+    { n: '02', title: 'Ember Chocolate Lava', desc: 'Warm dark chocolate heart, smoked caramel, vanilla bean ice cream, gold leaf.', price: '$16', tag: 'Indulgent' },
+    { n: '03', title: 'Grilled Peach Tart', desc: 'Seasonal peach halves grilled over cherry wood, almond cream, lavender honey, puff pastry.', price: '$13', tag: 'Seasonal' },
+    { n: '04', title: 'Wood-Smoked Ice Cream', desc: 'Vanilla ice cream infused with hickory smoke, torched meringue, salted caramel brittle.', price: '$12', tag: 'House Made' },
+    { n: '05', title: 'Ash & Honey Panna Cotta', desc: 'Silky panna cotta dusted with edible charcoal, wildflower honey, candied kumquat.', price: '$13', tag: 'Light' },
+    { n: '06', title: 'Flame-Toasted S\'more', desc: 'Our tableside dessert. Graham cracker base, dark chocolate ganache, toasted marshmallow, bourbon caramel.', price: '$15', tag: 'Tableside' },
+  ]
+};
+
+function renderMenu(tab) {
+  const grid = document.getElementById('menuGrid');
+  grid.innerHTML = '';
+  menuData[tab].forEach((item, i) => {
+    const card = document.createElement('div');
+    card.className = 'menu-card';
+    card.innerHTML = `
+      <span class="card-number">${item.n}</span>
+      <h3 class="card-title">${item.title}</h3>
+      <p class="card-desc">${item.desc}</p>
+      <div class="card-footer">
+        <span class="card-price">${item.price}</span>
+        <span class="card-tag">${item.tag}</span>
+      </div>`;
+    card.addEventListener('mousemove', e => {
+      const r = card.getBoundingClientRect();
+      card.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100) + '%');
+      card.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100) + '%');
+    });
+    grid.appendChild(card);
+    setTimeout(() => card.classList.add('revealed'), i * 80);
+  });
+}
+renderMenu('signatures');
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderMenu(btn.dataset.tab);
+  });
+});
+
+// ─── SCROLL REVEAL ───
+const revealObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+      revealObserver.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.15 });
+
+document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+// ─── COUNTER ANIMATION ───
+function animateCounter(el) {
+  const target = parseInt(el.dataset.target);
+  const isSup = el.querySelector('sup');
+  const duration = 1800;
+  const start = performance.now();
+  function update(now) {
+    const t = Math.min((now - start) / duration, 1);
+    const eased = 1 - Math.pow(1 - t, 3);
+    const val = Math.round(eased * target);
+    el.innerHTML = isSup ? `<sup>#</sup>${val}` : val;
+    if (t < 1) requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+}
+
+const counterObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      animateCounter(entry.target);
+      counterObserver.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.5 });
+
+document.querySelectorAll('[data-target]').forEach(el => counterObserver.observe(el));
+
+// ─── PARALLAX HERO ───
+document.addEventListener('scroll', () => {
+  const hero = document.getElementById('hero');
+  const scrollY = window.scrollY;
+  if (scrollY < window.innerHeight) {
+    hero.querySelector('.hero-content').style.transform = `translateY(${scrollY * 0.3}px)`;
+    hero.querySelector('.hero-bg').style.transform = `translateY(${scrollY * 0.2}px)`;
+  }
+});
+</script>
+</body>
+</html>
