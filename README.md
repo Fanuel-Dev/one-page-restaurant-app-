@@ -12,7 +12,7 @@ git branch -M main
 
 # 5. Link your local folder to your GitHub project
 # (Replace the URL below with your actual GitHub repository URL)
-git remote add origin https://github.com/YOUR-USERNAME/dineflow-restaurant-app.git
+git remote add origin [https://github.com/YOUR-USERNAME/dineflow-restaurant-app.git](https://github.com/Fanuel-Dev/one-page-restaurant-app-/tree/main)
 
 # 6. Push your files live to GitHub
 git push -u origin main
